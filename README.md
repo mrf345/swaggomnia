@@ -1,10 +1,10 @@
 
-Generate Swagger Documentation from Insomnium REST Client (maintained fork of [Fyb3roptik/swaggomnia](https://github.com/mrf345/swaggomnia))
+Generate Swagger Documentation from Insomnium REST Client (maintained fork of [Fyb3roptik/swaggomnia](https://github.com/Fyb3roptik/swaggomnia))
 
 ## Install
 
 ```
-go install github.com/mrf345/swaggymnia
+go install github.com/mrf345/swaggymnia@latest
 ```
 
 ## Changes

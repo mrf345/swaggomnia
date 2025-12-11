@@ -52,3 +52,9 @@ $ swaggomnia generate -i examples/watchnow.json -c examples/config.json -o json
   "description" : "API description"
 }
 ```
+
+### Updating `tmpl/`
+
+1. `go install github.com/go-bindata/go-bindata/...@latest`
+2. make some changes to `tmpl/swagger.yaml`
+3. `go-bindata -o template.go tmpl/`

@@ -1,32 +1,16 @@
-<div align="center">
-  <img src="logo.svg"/>
-</div>
 
-<br />
-<br />
+Generate Swagger Documentation from Insomnium REST Client (maintained fork of [Fyb3roptik/swaggomnia](https://github.com/mrf345/swaggomnia))
 
-![Swaggomnia Build](https://github.com/Fyb3roptik/swaggomnia/workflows/Swaggomnia%20Build/badge.svg)
+## Install
 
-## Description
+```
+go install github.com/mrf345/swaggymnia
+```
 
-THIS IS A DEAD REPO NOW. Insomnia should now support this internally.
+## Changes
 
-Generate Swagger Documentation from Insomnia REST Client.
-<br />
-*This is a fork of [swaggymnia](https://github.com/mlabouardy/swaggymnia) which is now dead.*
-
-## Support
-[![Swaggomnia chat](https://badges.gitter.im/swaggomnia/gitter.png)](https://gitter.im/swaggomnia/community)
-
-## Changelog
-
-`2.0.1`
- * Updated Logo
-
-`2.0`
- * Open API 3 support
- * Insomnia v4 support
- * New Config Format
+- Enables request body string
+- Enables unescaped resource description (useful for showing code snippets)
 
 ## How to use it
 
@@ -46,26 +30,17 @@ $ swaggomnia generate -insomnia INSOMNIA_EXPORTED_FILE -config CONFIG_FILE -outp
 | ------ | ----------- |
 | -insomnia | Insomnia exported file |
 | -config | API Global Configuration file (see [Configuration Format](#configuration-format))|
-| -output | Insomnia output format (json or yaml, default json)  |
+| -output | Insomnia output format (json or yaml, default yaml)  |
 
 
 ## Example
 
 Let's convert the following Insomnia API documentation to Swagger:
 
-<div align="center">
-  <img src="insomnia.png"/>
-</div>
-
-Issue the following command:
 
 ```
 $ swaggomnia generate -i examples/watchnow.json -c examples/config.json -o json
 ```
-
-<div align="center">
-  <img src="swagger.png"/>
-</div>
 
 ## Configuration Format
 
@@ -77,10 +52,3 @@ $ swaggomnia generate -i examples/watchnow.json -c examples/config.json -o json
   "description" : "API description"
 }
 ```
-
-## Maintainers
-- Nick Wallace - nwallace@fyberstudios.com - New Author
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details

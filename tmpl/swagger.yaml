@@ -21,9 +21,17 @@ paths:
       summary: "{{ $resource.Name }}"
       {{- if or $resource.Parameters $resource.Body.Params $resource.Headers }}
       {{- if $resource.Body.MimeType }}
-      description: "{{ $resource.Description }}"
+      description: "{{ $resource.Description | UnescapeHTML }}"
       {{- end }}
       parameters:
+      {{- if $resource.Body.MimeType }}
+      - name: "body"
+        in: "body"
+        schema:
+          type: "{{ $resource.Body.MimeType }}"
+        description: "request body"
+        required: true
+      {{- end }}
       {{- range $p, $param := $resource.Parameters}}
       - name: "{{ $param.Name }}"
         in: "query"

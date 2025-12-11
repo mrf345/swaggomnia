@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
@@ -12,10 +11,10 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	. "github.com/Fyb3roptik/swaggomnia/models"
+	"github.com/mrf345/swaggomnia/models"
 )
 
-var groupNames map[string]string
+var groups map[string]string
 
 const (
 	REQUEST_GROUP = "request_group"
@@ -24,9 +23,11 @@ const (
 	JSON_FORMAT   = "json"
 )
 
+type Entities map[string]map[string][]models.Resource
+
 type Swagger struct {
 	Config   SwaggerConfig
-	Entities map[string]map[string][]Resource
+	Entities Entities
 }
 
 type SwaggerConfig struct {
@@ -38,127 +39,143 @@ type SwaggerConfig struct {
 	Description string `json:"description"`
 }
 
-func parse(insomnia Insomnia) map[string]map[string][]Resource {
-	groupNames = make(map[string]string)
-	entities := make(map[string]map[string][]Resource)
-	for _, resource := range insomnia.Resources {
-		if resource.Type == REQUEST_GROUP {
-			groupNames[resource.ID] = resource.Name
-			entities[resource.ID] = make(map[string][]Resource, 0)
+func parse(insomnia models.Insomnia) Entities {
+	groups = make(map[string]string)
+	es := make(Entities)
+
+	for _, r := range insomnia.Resources {
+		if r.Type == REQUEST_GROUP {
+			groups[r.ID] = r.Name
+			es[r.ID] = make(map[string][]models.Resource, 0)
 		}
-		if resource.Type == REQUEST {
-			fetchVariables(&resource)
-			if entities[resource.ParentID] == nil {
-				entities[resource.ParentID] = make(map[string][]Resource, 0)
+
+		if r.Type == REQUEST {
+			fetchVariables(&r)
+
+			if es[r.ParentID] == nil {
+				es[r.ParentID] = make(map[string][]models.Resource, 0)
 			}
-			entities[resource.ParentID][resource.URL] = append(entities[resource.ParentID][resource.URL], resource)
+
+			es[r.ParentID][r.URL] = append(es[r.ParentID][r.URL], r)
 		}
 	}
-	return entities
+
+	return es
 }
 
-func readInsomniaExport(fileName string) Insomnia {
-	raw, err := ioutil.ReadFile(fileName)
-	if err != nil {
+func readInsomniaExport(name string) (i models.Insomnia) {
+	var raw []byte
+	var err error
+
+	if raw, err = os.ReadFile(name); err != nil {
 		log.Fatal(err)
 	}
-	var insomnia Insomnia
-	if err := json.Unmarshal(raw, &insomnia); err != nil {
+
+	if err := json.Unmarshal(raw, &i); err != nil {
 		log.Fatal(err)
 	}
-	return insomnia
+
+	return
 }
 
-func readSwaggerConfig(fileName string) SwaggerConfig {
-	raw, err := ioutil.ReadFile(fileName)
-	if err != nil {
+func readSwaggerConfig(name string) (cfg SwaggerConfig) {
+	var raw []byte
+	var err error
+
+	if raw, err = os.ReadFile(name); err != nil {
 		log.Fatal(err)
 	}
-	var config SwaggerConfig
-	if err := json.Unmarshal(raw, &config); err != nil {
+
+	if err := json.Unmarshal(raw, &cfg); err != nil {
 		log.Fatal(err)
 	}
-	return config
+
+	return
 }
 
-func (s *Swagger) Generate(insomniaFile string, configFile string, outputFormat string) {
+func (s *Swagger) Generate(insomniaFile, configFile, outputFormat string) {
 	s.Config = readSwaggerConfig(configFile)
 	s.Entities = parse(readInsomniaExport(insomniaFile))
+
 	switch outputFormat {
 	case YAML_FORMAT:
 		s.generateYAML()
-		break
 	case JSON_FORMAT:
 		s.generateJSON()
-		break
 	default:
 		log.Fatal("Only json or yaml formats are supported")
 	}
 }
 
-func (s Swagger) initTemplate() *template.Template {
-	funcMap := template.FuncMap{
-		"ToLower": strings.ToLower,
-		"RemovePathPrefix": func(path string) string {
-			re := regexp.MustCompile("{{(.*?)}}")
-			for _, param := range re.FindAllStringSubmatch(path, -1) {
-				path = strings.Replace(path, param[0], "", -1)
-			}
-			if strings.ContainsAny(path, s.Config.BasePath) {
-				path = strings.Replace(path, s.Config.BasePath, "", -1)
-			}
-			return path
+func (s Swagger) initTemplate() (tpl *template.Template) {
+	var err error
+	var data []byte
+	var mapper = template.FuncMap{
+		"ToLower":      strings.ToLower,
+		"GetGroupName": func(id string) string { return groups[id] },
+		"UnescapeHTML": func(s string) template.HTML {
+			return template.HTML(strings.ReplaceAll(s, `"`, `\"`))
 		},
-		"GetGroupName": func(id string) string {
-			return groupNames[id]
+		"RemovePathPrefix": func(path string) (rp string) {
+			for _, p := range regexp.
+				MustCompile("{{(.*?)}}").
+				FindAllStringSubmatch(path, -1) {
+				rp = strings.ReplaceAll(path, p[0], "")
+			}
+
+			return strings.ReplaceAll(rp, s.Config.BasePath, "")
 		},
 	}
-	data, err := Asset("tmpl/swagger.yaml")
-	if err != nil {
+
+	if data, err = Asset("tmpl/swagger.yaml"); err != nil {
 		log.Fatal(err)
 	}
-	tmpl, err := template.New("swagger.yaml").Funcs(funcMap).Parse(string(data))
-	if err != nil {
+
+	if tpl, err = template.
+		New("swagger.yaml").
+		Funcs(mapper).
+		Parse(string(data)); err != nil {
 		log.Fatal(err)
 	}
-	return tmpl
+
+	return
 }
 
 func (s Swagger) generateJSON() {
-	tmpl := s.initTemplate()
-
+	var err error
 	var tpl bytes.Buffer
-	err := tmpl.Execute(&tpl, s)
-	if err != nil {
+	var data []byte
+
+	if err = s.initTemplate().Execute(&tpl, s); err != nil {
 		log.Fatal(err)
 	}
-	data, err := yaml.YAMLToJSON(tpl.Bytes())
-	if err != nil {
+
+	if data, err = yaml.YAMLToJSON(tpl.Bytes()); err != nil {
 		log.Fatal(err)
 	}
-	err = ioutil.WriteFile("swagger.json", data, 0644)
-	if err != nil {
+
+	if err = os.WriteFile("swagger.json", data, 0644); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func (s Swagger) generateYAML() {
-	tmpl := s.initTemplate()
+	var err error
+	var f *os.File
 
-	f, err := os.Create("swagger.yaml")
-	if err != nil {
+	if f, err = os.Create("swagger.yaml"); err != nil {
 		log.Fatal(err)
 	}
 
-	err = tmpl.Execute(f, s)
-	if err != nil {
+	if err = s.initTemplate().Execute(f, s); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func fetchVariables(resource *Resource) {
-	re := regexp.MustCompile("/{{ (.*?) }}#*")
-	for _, param := range re.FindAllStringSubmatch(resource.URL, -1) {
-		resource.InsomniaParams = append(resource.InsomniaParams, param[1])
+func fetchVariables(r *models.Resource) {
+	for _, param := range regexp.
+		MustCompile("/{{ (.*?) }}#*").
+		FindAllStringSubmatch(r.URL, -1) {
+		r.InsomniaParams = append(r.InsomniaParams, param[1])
 	}
 }

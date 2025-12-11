@@ -1,9 +1,8 @@
-module github.com/mrf345/swaggymnia
+module github.com/mrf345/swaggomnia
 
 go 1.18
 
 require (
-	github.com/mrf345/swaggomnia v0.0.0-20211015224234-68af30d9af42
 	github.com/ghodss/yaml v1.0.0
 	github.com/urfave/cli v1.22.5
 )

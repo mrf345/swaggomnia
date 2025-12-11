@@ -4,7 +4,7 @@ Generate Swagger Documentation from Insomnium REST Client (maintained fork of [F
 ## Install
 
 ```
-go install github.com/mrf345/swaggymnia@latest
+go install github.com/mrf345/swaggomnia@latest
 ```
 
 ## Changes

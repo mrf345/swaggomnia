@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"maps"
@@ -150,11 +151,25 @@ func (s Swagger) initTemplate() (tpl *template.Template) {
 		"UnescapeHTML": func(s string) template.HTML {
 			return template.HTML(strings.ReplaceAll(s, `"`, `\"`))
 		},
-		"RemovePathPrefix": func(path string) (rp string) {
+		"GetPathParams": func(path string) (ps []string) {
+			for _, p := range s.getPathParams(path) {
+				ps = append(ps, p[2])
+			}
+			return
+		},
+		"RemovePathPrefixAndReplaceParams": func(path string) (rp string) {
 			for _, p := range regexp.
 				MustCompile("{{(.*?)}}").
 				FindAllStringSubmatch(path, -1) {
 				rp = strings.ReplaceAll(path, p[0], "")
+			}
+
+			for _, p := range s.getPathParams(path) {
+				rp = strings.ReplaceAll(
+					rp,
+					p[0],
+					fmt.Sprintf("{%s}", p[2]),
+				)
 			}
 
 			return strings.ReplaceAll(rp, s.Config.BasePath, "")
@@ -173,6 +188,12 @@ func (s Swagger) initTemplate() (tpl *template.Template) {
 	}
 
 	return
+}
+
+func (s Swagger) getPathParams(path string) [][]string {
+	return regexp.
+		MustCompile("{% (.*?), '(.*?)', (.*?) %}").
+		FindAllStringSubmatch(path, -1)
 }
 
 func (s Swagger) generateJSON() {

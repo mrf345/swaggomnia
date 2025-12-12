@@ -59,7 +59,7 @@ $ swaggomnia generate -i examples/watchnow.json -c examples/config.json -o json
 3. `go-bindata -o template.go tmpl/`
 
 
-### TODOs
+### Changes & TODOs
 
 - [x] enable request body string
 - [x] enable escaped resource description content (useful for showing code snippets)
@@ -67,17 +67,5 @@ $ swaggomnia generate -i examples/watchnow.json -c examples/config.json -o json
 - [x] hide empty groups
 - [x] add security definitions and options to config
 - [x] sort by group names instead of ids
-
-- [ ] replace url params `{% request 'parameter', 'id', 0 %}` with `{id}` and required params to definition
-
-```yml
-parameters:
-  - name: userId # The name must match the template expression
-    in: path # Specifies the parameter is part of the URL path
-    required: true # Path parameters must always be required
-    description: Numeric ID of the user to get
-    schema:
-      type: integer # Defines the data type of the parameter
-      format: int64
-      example: 101
-```
+- [x] enable query params description
+- [x] enable and replace url path params `{% request 'parameter', 'id', 0 %}` with `{id}`

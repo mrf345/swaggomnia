@@ -41,17 +41,23 @@ tags:
 paths:
 {{- range $_, $e := .SortedEntities }}
 {{- range $path, $resources := $e.Entity }}
-  {{ $path | RemovePathPrefix}}:
+  {{ $path | RemovePathPrefixAndReplaceParams }}:
     {{- range $kk, $resource := $resources }}
     {{ $resource.Method | ToLower }}:
       tags:
       - "{{ $e.Group }}"
       summary: "{{ $resource.Name }}"
       {{- if or $resource.Parameters $resource.Body.Params $resource.Headers $resource.Body.MimeType }}
-      {{- if $resource.Body.MimeType }}
       description: "{{ $resource.Description | UnescapeHTML }}"
-      {{- end }}
       parameters:
+      {{- range $_, $pp := $path | GetPathParams }}
+      - name: "{{ $pp }}"
+        in: "path"
+        schema:
+          type: "string"
+        description: ""
+        required: true
+      {{- end }}
       {{- if $resource.Body.MimeType }}
       - name: "body"
         in: "body"
@@ -61,12 +67,14 @@ paths:
         required: true
       {{- end }}
       {{- range $p, $param := $resource.Parameters}}
+      {{- if not $param.Disabled }}
       - name: "{{ $param.Name }}"
         in: "query"
         schema:
           type: "string"
-        description: ""
+        description: "{{ $param.Description }}"
         required: false
+      {{- end }}
       {{- end }}
       {{- range $p, $param := $resource.Headers}}
       - name: "{{ $param.Name }}"

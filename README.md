@@ -42,7 +42,7 @@ $ swaggomnia generate -i examples/watchnow.json -c examples/config.json -o json
 > [!TIP]
 > `security` field is case-sensitive and only supports `Bearer`, `Basic Auth`, `API Key`.
 
-```
+```json
 {
   "title" : "API Name",
   "version" : "API version",

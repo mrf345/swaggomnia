@@ -28,9 +28,9 @@ $ swaggomnia generate -insomnia INSOMNIA_EXPORTED_FILE -config CONFIG_FILE -outp
 
 | Option | Description |
 | ------ | ----------- |
-| -insomnia | Insomnia exported file |
-| -config | API Global Configuration file (see [Configuration Format](#configuration-format))|
-| -output | Insomnia output format (json or yaml, default yaml)  |
+| -i | Insomnia exported file |
+| -c | API Global Configuration file (see [Configuration Format](#configuration-format))|
+| -o | Insomnia output format (json or yaml, default yaml)  |
 
 
 ## Example
@@ -58,3 +58,34 @@ $ swaggomnia generate -i examples/watchnow.json -c examples/config.json -o json
 1. `go install github.com/go-bindata/go-bindata/...@latest`
 2. make some changes to `tmpl/swagger.yaml`
 3. `go-bindata -o template.go tmpl/`
+
+
+### TODOs
+
+- [x] make query params optional by default
+- [ ] Add security definitions and options to config
+
+```yml
+components:
+  securitySchemes:
+    bearerAuth: # Arbitrary name
+      type: http
+      scheme: bearer
+      bearerFormat: JWT # Optional: Provides a hint about the token format
+security:
+  - bearerAuth: []
+```
+
+- [ ] replace url params `{% request 'parameter', 'id', 0 %}` with `{id}` and required params to definition
+
+```yml
+parameters:
+  - name: userId # The name must match the template expression
+    in: path # Specifies the parameter is part of the URL path
+    required: true # Path parameters must always be required
+    description: Numeric ID of the user to get
+    schema:
+      type: integer # Defines the data type of the parameter
+      format: int64
+      example: 101
+```

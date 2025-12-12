@@ -39,8 +39,10 @@ type EntityParam struct {
 }
 
 type QueryParameters struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
+	Name        string `json:"name"`
+	Value       string `json:"value"`
+	Disabled    bool   `json:"disabled"`
+	Description string `json:"description"`
 }
 
 type EntityHeader struct {

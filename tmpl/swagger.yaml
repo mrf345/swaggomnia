@@ -3,42 +3,78 @@ info:
   description: "{{ .Config.Description }}"
   version: "{{ .Config.Version }}"
   title: "{{ .Config.Title }}"
+{{- if .IsBearer }}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+security:
+  - bearerAuth: []
+{{- end}}
+{{- if .IsBasic }}
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+security:
+  - basicAuth: []
+{{- end}}
+{{- if .IsApiKey }}
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Keay
+security:
+  - apiKeyAuth: []
+{{- end}}
 servers:
   - url: "{{ .Config.BasePath }}"
 tags:
-{{ range $key, $value := .Entities }}
-- name: "{{ $key | GetGroupName }}"
+{{ range $_, $e := .SortedEntities }}
+- name: "{{ $e.Group }}"
   description: ""
 {{ end }}
 paths:
-{{- range $key, $paths := .Entities }}
-{{- range $path, $resources := $paths }}
-  {{ $path | RemovePathPrefix}}:
+{{- range $_, $e := .SortedEntities }}
+{{- range $path, $resources := $e.Entity }}
+  {{ $path | RemovePathPrefixAndReplaceParams }}:
     {{- range $kk, $resource := $resources }}
     {{ $resource.Method | ToLower }}:
       tags:
-      - "{{ $key | GetGroupName }}"
+      - "{{ $e.Group }}"
       summary: "{{ $resource.Name }}"
-      {{- if or $resource.Parameters $resource.Body.Params $resource.Headers }}
-      {{- if $resource.Body.MimeType }}
+      {{- if or $resource.Parameters $resource.Body.Params $resource.Headers $resource.Body.MimeType }}
       description: "{{ $resource.Description | UnescapeHTML }}"
-      {{- end }}
       parameters:
+      {{- range $_, $pp := $path | GetPathParams }}
+      - name: "{{ $pp }}"
+        in: "path"
+        schema:
+          type: "string"
+        description: ""
+        required: true
+      {{- end }}
       {{- if $resource.Body.MimeType }}
       - name: "body"
         in: "body"
         schema:
-          type: "{{ $resource.Body.MimeType }}"
+          type: "string"
         description: "request body"
         required: true
       {{- end }}
       {{- range $p, $param := $resource.Parameters}}
+      {{- if not $param.Disabled }}
       - name: "{{ $param.Name }}"
         in: "query"
         schema:
           type: "string"
-        description: ""
+        description: "{{ $param.Description }}"
         required: false
+      {{- end }}
       {{- end }}
       {{- range $p, $param := $resource.Headers}}
       - name: "{{ $param.Name }}"

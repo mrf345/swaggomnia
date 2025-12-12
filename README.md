@@ -7,11 +7,6 @@ Generate Swagger Documentation from Insomnium REST Client (maintained fork of [F
 go install github.com/mrf345/swaggomnia@latest
 ```
 
-## Changes
-
-- Enables request body string
-- Enables unescaped resource description (useful for showing code snippets)
-
 ## How to use it
 
 See usage with:
@@ -44,12 +39,16 @@ $ swaggomnia generate -i examples/watchnow.json -c examples/config.json -o json
 
 ## Configuration Format
 
+> [!TIP]
+> `security` field is case-sensitive and only supports `Bearer`, `Basic Auth`, `API Key`.
+
 ```
 {
   "title" : "API Name",
   "version" : "API version",
   "basePath" : "https://api.domain.com/v1",
-  "description" : "API description"
+  "description" : "API description",
+  "security": "Bearer"
 }
 ```
 
@@ -62,19 +61,12 @@ $ swaggomnia generate -i examples/watchnow.json -c examples/config.json -o json
 
 ### TODOs
 
+- [x] enable request body string
+- [x] enable escaped resource description content (useful for showing code snippets)
 - [x] make query params optional by default
-- [ ] Add security definitions and options to config
-
-```yml
-components:
-  securitySchemes:
-    bearerAuth: # Arbitrary name
-      type: http
-      scheme: bearer
-      bearerFormat: JWT # Optional: Provides a hint about the token format
-security:
-  - bearerAuth: []
-```
+- [x] hide empty groups
+- [x] add security definitions and options to config
+- [x] sort by group names instead of ids
 
 - [ ] replace url params `{% request 'parameter', 'id', 0 %}` with `{id}` and required params to definition
 

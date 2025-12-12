@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"html/template"
 	"log"
+	"maps"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -14,29 +16,45 @@ import (
 	"github.com/mrf345/swaggomnia/models"
 )
 
-var groups map[string]string
+type Entity map[string][]models.Resource
+type Entities map[string]Entity
+type Security string
 
 const (
 	REQUEST_GROUP = "request_group"
 	REQUEST       = "request"
 	YAML_FORMAT   = "yaml"
 	JSON_FORMAT   = "json"
+
+	BasicAuth Security = "Basic Auth"
+	Bearer    Security = "Bearer"
+	ApiKey    Security = "API Key"
 )
 
-type Entities map[string]map[string][]models.Resource
+var groups map[string]string
+
+type SortedEntity struct {
+	Key    string
+	Entity Entity
+	Group  string
+}
 
 type Swagger struct {
-	Config   SwaggerConfig
-	Entities Entities
+	Config         SwaggerConfig
+	Entities       Entities
+	SortedEntities []SortedEntity
+
+	IsBasic, IsBearer, IsApiKey bool
 }
 
 type SwaggerConfig struct {
-	Title       string `json:"title"`
-	Version     string `json:"version"`
-	Host        string `json:"host"`
-	BasePath    string `json:"basePath"`
-	Schemes     string `json:"schemes"`
-	Description string `json:"description"`
+	Title       string   `json:"title"`
+	Version     string   `json:"version"`
+	Host        string   `json:"host"`
+	BasePath    string   `json:"basePath"`
+	Schemes     string   `json:"schemes"`
+	Description string   `json:"description"`
+	Security    Security `json:"security,omitempty"`
 }
 
 func parse(insomnia models.Insomnia) Entities {
@@ -59,6 +77,10 @@ func parse(insomnia models.Insomnia) Entities {
 			es[r.ParentID][r.URL] = append(es[r.ParentID][r.URL], r)
 		}
 	}
+
+	maps.DeleteFunc(es, func(k string, e Entity) bool {
+		return len(e) == 0
+	})
 
 	return es
 }
@@ -96,6 +118,19 @@ func readSwaggerConfig(name string) (cfg SwaggerConfig) {
 func (s *Swagger) Generate(insomniaFile, configFile, outputFormat string) {
 	s.Config = readSwaggerConfig(configFile)
 	s.Entities = parse(readInsomniaExport(insomniaFile))
+	s.IsApiKey = s.Config.Security == ApiKey
+	s.IsBasic = s.Config.Security == BasicAuth
+	s.IsBearer = s.Config.Security == Bearer
+
+	for k, v := range s.Entities {
+		s.SortedEntities = append(s.SortedEntities, SortedEntity{
+			Key: k, Entity: v, Group: groups[k],
+		})
+	}
+
+	slices.SortFunc(s.SortedEntities, func(a, b SortedEntity) int {
+		return strings.Compare(a.Group, b.Group)
+	})
 
 	switch outputFormat {
 	case YAML_FORMAT:
@@ -110,9 +145,8 @@ func (s *Swagger) Generate(insomniaFile, configFile, outputFormat string) {
 func (s Swagger) initTemplate() (tpl *template.Template) {
 	var err error
 	var data []byte
-	var mapper = template.FuncMap{
-		"ToLower":      strings.ToLower,
-		"GetGroupName": func(id string) string { return groups[id] },
+	var mappers = template.FuncMap{
+		"ToLower": strings.ToLower,
 		"UnescapeHTML": func(s string) template.HTML {
 			return template.HTML(strings.ReplaceAll(s, `"`, `\"`))
 		},
@@ -133,7 +167,7 @@ func (s Swagger) initTemplate() (tpl *template.Template) {
 
 	if tpl, err = template.
 		New("swagger.yaml").
-		Funcs(mapper).
+		Funcs(mappers).
 		Parse(string(data)); err != nil {
 		log.Fatal(err)
 	}

@@ -11,13 +11,8 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = "swaggonmia"
-	app.Usage = "Insomnia to Swagger converter"
-	app.Version = "1.1.0"
+	app.Usage = "Insomnia/Insomnium to Swagger converter"
 	app.Compiled = time.Now()
-	app.Authors = []cli.Author{{
-		Name:  "Nick Wallace",
-		Email: "nwallace@fyberstudios.com",
-	}}
 	app.Commands = []cli.Command{
 		{
 			Name:    "generate",

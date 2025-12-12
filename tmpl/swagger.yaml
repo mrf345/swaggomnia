@@ -38,7 +38,7 @@ paths:
         schema:
           type: "string"
         description: ""
-        required: true
+        required: false
       {{- end }}
       {{- range $p, $param := $resource.Headers}}
       - name: "{{ $param.Name }}"

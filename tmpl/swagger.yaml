@@ -47,8 +47,8 @@ paths:
       tags:
       - "{{ $e.Group }}"
       summary: "{{ $resource.Name }}"
-      {{- if or $resource.Parameters $resource.Body.Params $resource.Headers $resource.Body.MimeType }}
       description: "{{ $resource.Description | UnescapeHTML }}"
+      {{- if or $resource.Parameters $resource.Body.Params $resource.Headers $resource.Body.MimeType }}
       parameters:
       {{- range $_, $pp := $path | GetPathParams }}
       - name: "{{ $pp }}"

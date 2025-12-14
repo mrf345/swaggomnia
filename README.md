@@ -69,3 +69,6 @@ $ swaggomnia generate -i examples/watchnow.json -c examples/config.json -o json
 - [x] sort by group names instead of ids
 - [x] enable query params description
 - [x] enable and replace url path params `{% request 'parameter', 'id', 0 %}` with `{id}`
+- [x] support multipart-form requests
+- [x] add more status codes conditioned by security and read/write method
+- [x] fix parameter default values

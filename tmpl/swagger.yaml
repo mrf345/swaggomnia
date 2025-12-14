@@ -1,9 +1,10 @@
+{{- $T := . }}
 openapi: 3.0.0
 info:
-  description: "{{ .Config.Description }}"
-  version: "{{ .Config.Version }}"
-  title: "{{ .Config.Title }}"
-{{- if .IsBearer }}
+  description: "{{ $T.Config.Description }}"
+  version: "{{ $T.Config.Version }}"
+  title: "{{ $T.Config.Title }}"
+{{- if $T.IsBearer }}
 components:
   securitySchemes:
     bearerAuth:
@@ -12,7 +13,7 @@ components:
 security:
   - bearerAuth: []
 {{- end}}
-{{- if .IsBasic }}
+{{- if $T.IsBasic }}
 components:
   securitySchemes:
     basicAuth:
@@ -21,7 +22,7 @@ components:
 security:
   - basicAuth: []
 {{- end}}
-{{- if .IsApiKey }}
+{{- if $T.IsApiKey }}
 components:
   securitySchemes:
     apiKeyAuth:
@@ -34,34 +35,64 @@ security:
 servers:
   - url: "{{ .Config.BasePath }}"
 tags:
-{{ range $_, $e := .SortedEntities }}
+{{ range $_, $e := $T.SortedEntities }}
 - name: "{{ $e.Group }}"
   description: ""
 {{ end }}
 paths:
-{{- range $_, $e := .SortedEntities }}
+{{- range $_, $e := $T.SortedEntities }}
 {{- range $path, $resources := $e.Entity }}
   {{ $path | RemovePathPrefixAndReplaceParams }}:
-    {{- range $kk, $resource := $resources }}
+    {{- range $_, $resource := $resources }}
     {{ $resource.Method | ToLower }}:
       tags:
       - "{{ $e.Group }}"
       summary: "{{ $resource.Name }}"
       description: "{{ $resource.Description | UnescapeHTML }}"
       {{- if or $resource.Parameters $resource.Body.Params $resource.Headers $resource.Body.MimeType }}
+      {{- if eq $resource.Body.MimeType "multipart/form-data" }}
+      {{- if $resource.Body.Params }}
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+               {{- range $_, $pp := $resource.Body.Params }}
+               {{ $pp.Name }}:
+                type: "string"
+                description: "{{ $pp.Description }}"
+                {{- if $pp.Type }}
+                format: binary
+                {{- end }}
+               {{- end }}
+      {{- end }}
+      {{- end }}
       parameters:
+      {{- if eq $resource.Body.MimeType "multipart/form-data" }}
+      - name: "Content-Type"
+        in: "header"
+        schema:
+          default: "multipart/form-data"
+          type: "string"
+        required: true
+        description: ""
+      {{- end }}
       {{- range $_, $pp := $path | GetPathParams }}
       - name: "{{ $pp }}"
         in: "path"
         schema:
+          default: ""
           type: "string"
         description: ""
         required: true
       {{- end }}
-      {{- if $resource.Body.MimeType }}
+      {{- if eq $resource.Body.MimeType "application/json" }}
       - name: "body"
         in: "body"
         schema:
+          default: ""
           type: "string"
         description: "request body"
         required: true
@@ -71,6 +102,7 @@ paths:
       - name: "{{ $param.Name }}"
         in: "query"
         schema:
+          default: ""
           type: "string"
         description: "{{ $param.Description }}"
         required: false
@@ -80,6 +112,7 @@ paths:
       - name: "{{ $param.Name }}"
         in: "header"
         schema:
+          default: ""
           type: "string"
         description: ""
         required: true
@@ -88,6 +121,24 @@ paths:
       responses:
         200:
           description: "successful operation"
+        {{- if $resource.IsWrite }}
+        400:
+          description: "invalid request data or format"
+        {{- end }}
+        {{- if $resource.Authentication.Token }}
+        {{- if or $T.IsBearer $T.IsApiKey }}
+        401:
+          description: "missing or invalid authentication token"
+        {{- end }}
+        {{- end }}
+        {{- if $resource.Authentication.Type }}
+        {{- if or $T.IsBearer $T.IsApiKey $T.IsBasic }}
+        403:
+          description: "insuffecient or invalid permissions"
+        {{- end }}
+        {{- end }}
+        404:
+          description: "endpoint or resource not found"
     {{- end }}
 {{- end }}
 {{- end }}

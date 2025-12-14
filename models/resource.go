@@ -18,7 +18,7 @@ type Resource struct {
 	Body                            EntityBody        `json:"body,omitempty"`
 	Parameters                      []QueryParameters `json:"parameters,omitempty"`
 	Headers                         []EntityHeader    `json:"headers,omitempty"`
-	Authentication                  struct{}          `json:"authentication,omitempty"`
+	Authentication                  Authentication    `json:"authentication,omitempty"`
 	SettingStoreCookies             bool              `json:"settingStoreCookies,omitempty"`
 	SettingSendCookies              bool              `json:"settingSendCookies,omitempty"`
 	SettingDisableRenderRequestBody bool              `json:"settingDisableRenderRequestBody,omitempty"`
@@ -32,10 +32,12 @@ type EntityBody struct {
 }
 
 type EntityParam struct {
-	Name     string `json:"name"`
-	Value    string `json:"value"`
-	ID       string `json:"id"`
-	Disabled bool   `json:"disabled"`
+	Name        string `json:"name"`
+	Value       string `json:"value"`
+	ID          string `json:"id"`
+	Disabled    bool   `json:"disabled"`
+	Description string `json:"description,omitempty"`
+	Type        string `json:"type,omitempty"`
 }
 
 type QueryParameters struct {
@@ -53,4 +55,18 @@ type EntityHeader struct {
 type DataUrl struct {
 	BaseURL string `json:"base_url"`
 	RefURL  string `json:"ref_url"`
+}
+
+type Authentication struct {
+	Type     string `json:"type"`
+	Token    string `json:"token,omitempty"`
+	Disabled bool   `json:"disabled,omitempty"`
+}
+
+func (r *Resource) IsWrite() (wr bool) {
+	switch r.Method {
+	case "POST", "PUT", "PATCH":
+		return true
+	}
+	return
 }

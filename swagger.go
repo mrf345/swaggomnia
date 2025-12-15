@@ -15,6 +15,7 @@ import (
 	"github.com/ghodss/yaml"
 
 	"github.com/mrf345/swaggomnia/models"
+	"github.com/mrf345/swaggomnia/utils"
 )
 
 type Entity map[string][]models.Resource
@@ -35,9 +36,8 @@ const (
 var groups map[string]string
 
 type SortedEntity struct {
-	Key    string
-	Entity Entity
-	Group  string
+	Key, Group string
+	Entity     Entity
 }
 
 type Swagger struct {
@@ -151,12 +151,6 @@ func (s Swagger) initTemplate() (tpl *template.Template) {
 		"UnescapeHTML": func(s string) template.HTML {
 			return template.HTML(strings.ReplaceAll(s, `"`, `\"`))
 		},
-		"GetPathParams": func(path string) (ps []string) {
-			for _, p := range s.getPathParams(path) {
-				ps = append(ps, p[2])
-			}
-			return
-		},
 		"RemovePathPrefixAndReplaceParams": func(path string) (rp string) {
 			for _, p := range regexp.
 				MustCompile("{{(.*?)}}").
@@ -164,7 +158,7 @@ func (s Swagger) initTemplate() (tpl *template.Template) {
 				rp = strings.ReplaceAll(path, p[0], "")
 			}
 
-			for _, p := range s.getPathParams(path) {
+			for _, p := range utils.GetPathParams(path) {
 				rp = strings.ReplaceAll(
 					rp,
 					p[0],
@@ -188,12 +182,6 @@ func (s Swagger) initTemplate() (tpl *template.Template) {
 	}
 
 	return
-}
-
-func (s Swagger) getPathParams(path string) [][]string {
-	return regexp.
-		MustCompile("{% (.*?), '(.*?)', (.*?) %}").
-		FindAllStringSubmatch(path, -1)
 }
 
 func (s Swagger) generateJSON() {

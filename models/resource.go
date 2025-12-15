@@ -1,5 +1,11 @@
 package models
 
+import (
+	"slices"
+
+	"github.com/mrf345/swaggomnia/utils"
+)
+
 type Resource struct {
 	ID                              string            `json:"_id"`
 	ParentID                        string            `json:"parentId"`
@@ -63,10 +69,34 @@ type Authentication struct {
 	Disabled bool   `json:"disabled,omitempty"`
 }
 
+type PathParam struct {
+	Name, Description string
+}
+
 func (r *Resource) IsWrite() (wr bool) {
 	switch r.Method {
 	case "POST", "PUT", "PATCH":
 		return true
 	}
 	return
+}
+
+func (r *Resource) GetPathParams(path string) (pp []PathParam) {
+	for _, ps := range utils.GetPathParams(path) {
+		for _, p := range r.Parameters {
+			if p.Name == ps[2] {
+				pp = append(pp, PathParam{
+					Name:        p.Name,
+					Description: p.Description,
+				})
+			}
+		}
+	}
+	return
+}
+
+func (qp *QueryParameters) IsPathParam(path string) bool {
+	return slices.ContainsFunc(utils.GetPathParams(path), func(ps []string) bool {
+		return ps[2] == qp.Name
+	})
 }

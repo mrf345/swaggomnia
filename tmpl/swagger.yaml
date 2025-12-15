@@ -120,6 +120,8 @@ paths:
       responses:
         200:
           description: "successful operation"
+        204:
+          description: "successful operation with nothing to return"
         {{- if $resource.IsWrite }}
         400:
           description: "invalid request data or format"

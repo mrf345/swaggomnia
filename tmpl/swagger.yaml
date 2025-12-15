@@ -79,13 +79,12 @@ paths:
         required: true
         description: ""
       {{- end }}
-      {{- range $_, $pp := $path | GetPathParams }}
-      - name: "{{ $pp }}"
+      {{- range $_, $pp := $resource.GetPathParams $path }}
+      - name: "{{ $pp.Name }}"
         in: "path"
         schema:
-          default: ""
           type: "string"
-        description: ""
+        description: "{{ $pp.Description }}"
         required: true
       {{- end }}
       {{- if eq $resource.Body.MimeType "application/json" }}
@@ -98,11 +97,11 @@ paths:
         required: true
       {{- end }}
       {{- range $p, $param := $resource.Parameters}}
-      {{- if not $param.Disabled }}
+      {{- if $param.IsPathParam $path }}{{- else }}
       - name: "{{ $param.Name }}"
         in: "query"
         schema:
-          default: ""
+          default: {{- if $param.Disabled }} "" {{- else }} "{{ $param.Value }}" {{- end }}
           type: "string"
         description: "{{ $param.Description }}"
         required: false
@@ -121,6 +120,8 @@ paths:
       responses:
         200:
           description: "successful operation"
+        204:
+          description: "successful operation with nothing to return"
         {{- if $resource.IsWrite }}
         400:
           description: "invalid request data or format"

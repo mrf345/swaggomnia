@@ -111,9 +111,9 @@ paths:
       - name: "{{ $param.Name }}"
         in: "header"
         schema:
-          default: ""
+          default: "{{ $param.Value }}"
           type: "string"
-        description: ""
+        description: "{{ $param.Description }}"
         required: true
       {{- end }}
       {{- end }}

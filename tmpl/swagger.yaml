@@ -65,35 +65,29 @@ paths:
                 description: "{{ $pp.Description }}"
                 {{- if $pp.Type }}
                 format: binary
+                {{- else }}
+                default: ""
                 {{- end }}
                {{- end }}
       {{- end }}
+      {{- else if eq $resource.Body.MimeType "application/json" }}
+      requestBody:
+        {{- if ne $resource.Body.Value "" }}
+        required: true
+        {{- end }}
+        content:
+          application/json:
+            schema:
+              type: "string"
+              default: {{ $resource.Body.Value | UnescapeJSON }}
       {{- end }}
       parameters:
-      {{- if eq $resource.Body.MimeType "multipart/form-data" }}
-      - name: "Content-Type"
-        in: "header"
-        schema:
-          default: "multipart/form-data"
-          type: "string"
-        required: true
-        description: ""
-      {{- end }}
       {{- range $_, $pp := $resource.GetPathParams $path }}
       - name: "{{ $pp.Name }}"
         in: "path"
         schema:
           type: "string"
         description: "{{ $pp.Description }}"
-        required: true
-      {{- end }}
-      {{- if eq $resource.Body.MimeType "application/json" }}
-      - name: "body"
-        in: "body"
-        schema:
-          default: ""
-          type: "string"
-        description: "request body"
         required: true
       {{- end }}
       {{- range $p, $param := $resource.Parameters}}
@@ -111,9 +105,9 @@ paths:
       - name: "{{ $param.Name }}"
         in: "header"
         schema:
-          default: ""
+          default: "{{ $param.Value }}"
           type: "string"
-        description: ""
+        description: "{{ $param.Description }}"
         required: true
       {{- end }}
       {{- end }}

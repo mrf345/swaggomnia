@@ -35,6 +35,7 @@ type Resource struct {
 type EntityBody struct {
 	MimeType string        `json:"mimeType"`
 	Params   []EntityParam `json:"params"`
+	Value    string        `json:"text,omitempty"`
 }
 
 type EntityParam struct {
@@ -54,8 +55,9 @@ type QueryParameters struct {
 }
 
 type EntityHeader struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
+	Name        string `json:"name"`
+	Value       string `json:"value"`
+	Description string `json:"description,omitempty"`
 }
 
 type DataUrl struct {

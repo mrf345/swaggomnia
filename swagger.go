@@ -151,6 +151,9 @@ func (s Swagger) initTemplate() (tpl *template.Template) {
 		"UnescapeHTML": func(s string) template.HTML {
 			return template.HTML(strings.ReplaceAll(s, `"`, `\"`))
 		},
+		"UnescapeJSON": func(s string) template.HTML {
+			return template.HTML(s)
+		},
 		"RemovePathPrefixAndReplaceParams": func(path string) (rp string) {
 			for _, p := range regexp.
 				MustCompile("{{(.*?)}}").

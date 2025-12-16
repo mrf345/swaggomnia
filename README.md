@@ -72,3 +72,4 @@ $ swaggomnia generate -i examples/watchnow.json -c examples/config.json -o json
 - [x] support multipart-form requests
 - [x] add more status codes conditioned by security and read/write method
 - [x] fix parameter default values
+- [x] add header descriptions and default values
